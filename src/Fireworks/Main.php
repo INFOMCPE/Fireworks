@@ -19,6 +19,7 @@ use pocketmine\scheduler\AsyncTask;
 use pocketmine\level\particle\BubbleParticle;
 use pocketmine\Server;
 use pocketmine\utils\Utils;
+use pocketmine\scheduler\PluginTask;
 use pocketmine\level\Explosion;
 use pocketmine\level\Level;
 use pocketmine\event\server\DataPacketReceiveEvent;
@@ -61,33 +62,53 @@ public function update(){
 			$x = $block->x; 
 			$y = $block->y; //получаем координаты блока
 			$z = $block->z; 
-             $level = $player->getLevel();
-             $center = new Vector3($x, $y, $z);
-    
-             $radius = 10.0;
+			$level = $player->getLevel();
+				$count = 650;
+				$radius = 10;
 
-             $count = 650;
+				$task = new Task($this,$x,$y+20,$z,$level);
+				$this->getServer()->getScheduler()->scheduleDelayedTask($task,20);
 
-             $r = mt_rand(0, 300);
-             $g = mt_rand(0, 300);
-             $b = mt_rand(0, 300);
-             $center = new Vector3($x, $y + 3, $z); 
-             $particle = new DustParticle($center, $r, $g, $b);
-               for ($i = 0; $i < $count; $i++) {
-
-               $pitch = (mt_rand() / mt_getrandmax() - 0.5) * M_PI;
-               $yaw = mt_rand() / mt_getrandmax() * 2 * M_PI;
-               $y = -sin($pitch);$delta = cos($pitch);
-               $x = -sin($yaw) * $delta;
-               $z = cos($yaw) * $delta;
-               $v = new Vector3($x, $y + 5, $z);
-               $p = $center->add($v->normalize()->multiply($radius));
-               $particle->setComponents($p->x, $p->y, $p->z);
-               $level->addParticle($particle);}
-		}
 	}
-	
+}
+
 	public function addExplodeParticle(Position $pos, Particle $particle){
 		$pos->getLevel()->addParticle($particle);
 	}
 }
+
+
+class Task extends PluginTask{
+  public function __construct(PluginBase $owner,$x,$y,$z,$l){
+    parent::__construct($owner);
+	$this->x = $x;
+	$this->y = $y;
+	$this->z = $z;
+	$this->l = $l;
+  }
+  public function onRun($tick){
+	$radius = 4;
+
+	$r = mt_rand(0, 300);
+	$g = mt_rand(0, 300);
+	$b = mt_rand(0, 300);
+  		for($t = 0; $t <= 180; $t += 10){
+    		$rad = deg2rad($t);
+		$zt = $this->z+($radius * cos($rad));
+
+			for($c = 0; $c < 360; $c += 10){
+      				$rads = deg2rad($c);
+				$center = new Vector3($this->x+($radius * sin($rad) * cos($rads)), $this->y+($radius * sin($rad) * sin($rads)), $zt);
+
+        			$particle = new DustParticle($center, $r, $g, $b);
+				$this->l->addParticle($particle);
+
+		
+	}
+
+}
+
+
+  }
+}
+
